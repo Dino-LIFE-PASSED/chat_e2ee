@@ -31,17 +31,13 @@
       border-bottom: 1px solid #334155;
     }
     .my-key-box .label {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: #64748b;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       margin-bottom: 0.3rem;
     }
-    .my-key-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+    .my-key-row { display: flex; align-items: center; gap: 0.5rem; }
     .my-key-id {
       font-family: monospace;
       font-size: 0.8rem;
@@ -59,39 +55,28 @@
       padding: 0.75rem 1rem;
       border-bottom: 1px solid #334155;
     }
-    .contacts-header span { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-
-    #contacts-list {
-      list-style: none;
-      flex: 1;
-      overflow-y: auto;
+    .contacts-header span {
+      font-size: 0.68rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
+
+    #contacts-list { list-style: none; flex: 1; overflow-y: auto; }
     .contact-item {
       padding: 0.7rem 1rem;
       cursor: pointer;
       border-left: 3px solid transparent;
-      transition: background 0.1s;
     }
     .contact-item:hover { background: #0f172a; }
-    .contact-item.active {
-      background: #0f172a;
-      border-left-color: #38bdf8;
-    }
+    .contact-item.active { background: #0f172a; border-left-color: #38bdf8; }
     .contact-name { font-size: 0.9rem; }
-    .contact-key  { font-size: 0.7rem; font-family: monospace; color: #64748b; margin-top: 2px; }
+    .contact-key  { font-size: 0.7rem; font-family: monospace; color: #64748b; margin-top: 1px; }
 
-    .sidebar-footer {
-      padding: 0.75rem 1rem;
-      border-top: 1px solid #334155;
-    }
+    .sidebar-footer { padding: 0.75rem 1rem; border-top: 1px solid #334155; }
 
     /* ── Main chat area ──────────────────────────── */
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
     #empty-state {
       flex: 1;
@@ -101,28 +86,24 @@
       justify-content: center;
       color: #475569;
       gap: 0.5rem;
+      text-align: center;
+      padding: 2rem;
     }
-    #empty-state .icon { font-size: 3rem; }
-    #empty-state p { font-size: 0.9rem; }
+    #empty-state .icon { font-size: 2.5rem; }
 
-    #chat-pane {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    #chat-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     #chat-pane.hidden { display: none; }
 
     #chat-header {
       padding: 0.75rem 1.25rem;
       border-bottom: 1px solid #334155;
+      background: #1e293b;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      background: #1e293b;
+      gap: 0.75rem;
     }
     #chat-header .name { font-weight: 600; }
-    #chat-header .e2ee-badge {
+    .e2ee-badge {
       font-size: 0.7rem;
       background: #064e3b;
       color: #34d399;
@@ -131,8 +112,8 @@
       border-radius: 999px;
     }
     #chat-header .key-hint {
-      font-size: 0.75rem;
-      color: #64748b;
+      font-size: 0.72rem;
+      color: #475569;
       font-family: monospace;
       margin-left: auto;
     }
@@ -146,42 +127,19 @@
       gap: 0.5rem;
     }
 
-    .msg {
-      max-width: 70%;
-      padding: 0.5rem 0.75rem;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
+    .msg { max-width: 70%; padding: 0.5rem 0.75rem; border-radius: 10px; font-size: 0.9rem; line-height: 1.4; }
     .msg .text { word-break: break-word; }
-    .msg .time { font-size: 0.7rem; margin-top: 3px; opacity: 0.6; }
+    .msg .time { font-size: 0.7rem; margin-top: 3px; opacity: 0.55; }
 
-    .msg.mine {
-      background: #1d4ed8;
-      align-self: flex-end;
-      border-bottom-right-radius: 3px;
-    }
-    .msg.theirs {
-      background: #1e293b;
-      border: 1px solid #334155;
-      align-self: flex-start;
-      border-bottom-left-radius: 3px;
-    }
-    .msg.system {
-      align-self: center;
-      font-size: 0.75rem;
-      color: #64748b;
-      background: none;
-      border: none;
-      padding: 0.25rem 0;
-    }
+    .msg.mine   { background: #1d4ed8; align-self: flex-end; border-bottom-right-radius: 3px; }
+    .msg.theirs { background: #1e293b; border: 1px solid #334155; align-self: flex-start; border-bottom-left-radius: 3px; }
 
     .input-row {
       padding: 0.75rem 1rem;
       border-top: 1px solid #334155;
+      background: #1e293b;
       display: flex;
       gap: 0.5rem;
-      background: #1e293b;
     }
     #msg-input {
       flex: 1;
@@ -215,7 +173,7 @@
     }
     .modal h3 { color: #f1f5f9; font-size: 1rem; }
 
-    /* ── Shared button/input styles ──────────────── */
+    /* ── Shared ──────────────────────────────────── */
     button {
       background: #334155;
       border: none;
@@ -244,13 +202,23 @@
       font-size: 0.8rem;
       resize: vertical;
     }
-    textarea:focus, input[type="text"]:focus { outline: none; border-color: #38bdf8; }
+    textarea:focus, input:focus { outline: none; border-color: #38bdf8; }
 
     .error { color: #f87171; font-size: 0.85rem; }
     .hidden { display: none !important; }
+
+    #loading-screen {
+      position: fixed; inset: 0;
+      background: #0f172a;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; color: #64748b;
+    }
   </style>
 </head>
 <body>
+
+<!-- Shown while we compute the public key from the stored hex private key -->
+<div id="loading-screen">Loading keys…</div>
 
 <!-- ── Sidebar ───────────────────────────────────── -->
 <aside>
@@ -258,7 +226,7 @@
     <div class="label">Your public key (share this)</div>
     <div class="my-key-row">
       <span class="my-key-id" id="my-key-display"></span>
-      <button onclick="copyMyKey()" title="Copy full public key">Copy</button>
+      <button id="btn-copy-key" onclick="copyMyKey()">Copy</button>
     </div>
   </div>
 
@@ -274,12 +242,12 @@
   </div>
 </aside>
 
-<!-- ── Main Area ─────────────────────────────────── -->
+<!-- ── Main area ─────────────────────────────────── -->
 <main>
   <div id="empty-state">
     <div class="icon">💬</div>
-    <p>Add a contact and start a conversation.</p>
-    <p style="font-size:0.8rem;color:#334155">All messages are encrypted before they leave your browser.</p>
+    <p>Select a contact or add one to start chatting.</p>
+    <p style="font-size:0.8rem;margin-top:0.25rem">All messages are encrypted before they leave your browser.</p>
   </div>
 
   <div id="chat-pane" class="hidden">
@@ -290,14 +258,14 @@
     </div>
     <div id="messages"></div>
     <div class="input-row">
-      <input id="msg-input" type="text" placeholder="Type a message…" onkeydown="onInputKey(event)" />
+      <input id="msg-input" type="text" placeholder="Type a message…" onkeydown="onEnter(event)" />
       <button class="primary" onclick="sendMessage()">Send</button>
     </div>
   </div>
 </main>
 
 <!-- ── Add Contact Modal ─────────────────────────── -->
-<div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
+<div class="modal-overlay hidden" id="modal-overlay" onclick="maybeCloseModal(event)">
   <div class="modal">
     <h3>Add Contact</h3>
     <label>Their Public Key</label>
@@ -307,44 +275,62 @@
     <p id="modal-error" class="error hidden"></p>
     <div style="display:flex;gap:0.5rem;justify-content:flex-end">
       <button onclick="document.getElementById('modal-overlay').classList.add('hidden')">Cancel</button>
-      <button class="primary" onclick="addContact()">Add Contact</button>
+      <button class="primary" onclick="addContact()">Add</button>
     </div>
   </div>
 </div>
 
 <script src="crypto.js"></script>
 <script>
-  // ── Bootstrap ────────────────────────────────────────────────────────────────
+  // ── Bootstrap ─────────────────────────────────────────────────────────────
+  //
+  // We store only the hex private key in localStorage.
+  // On every page load, we re-derive the CryptoKey from it.
+  // This keeps the sensitive CryptoKey object out of storage
+  // (it lives only in memory for this session).
 
-  const privateKeyJwk = JSON.parse(localStorage.getItem('privateKey') || 'null');
-  const myPublicKey   = localStorage.getItem('publicKey') || null;
+  const myPrivateHex = localStorage.getItem('privateKeyHex');
+  const myPublicKey  = localStorage.getItem('publicKey');
 
-  if (!privateKeyJwk || !myPublicKey) {
-    location.href = '/'; // not logged in
+  if (!myPrivateHex || !myPublicKey) {
+    location.href = '/';
   }
 
-  // contacts: { [publicKeyB64]: { name: string } }
+  let privateCryptoKey = null; // set during init below
+
+  // contacts: { [publicKeyB64]: { name } }
   let contacts = JSON.parse(localStorage.getItem('contacts') || '{}');
 
-  // Received messages from server (decrypted): { [contactKey]: [{id, text, ts, dir}] }
+  // Message store: { [contactPublicKeyB64]: [{ id, dir, text, ts }] }
   // dir = 'in' | 'out'
   const msgStore = {};
-
-  // Sent messages we cached locally (so we can show our own bubbles).
-  // Key = contactPublicKey → [{ text, ts }]
-  // We store plaintext locally because we encrypt WITH their key — only they can decrypt.
-  const sentCache = {};
 
   let activeContact = null;
   let ws = null;
 
-  // ── UI init ──────────────────────────────────────────────────────────────────
+  // ── Async init ────────────────────────────────────────────────────────────
 
-  document.getElementById('my-key-display').textContent = E2EE.shortId(myPublicKey);
-  renderContacts();
-  connectWS();
+  (async () => {
+    try {
+      // Re-derive CryptoKey from the stored hex private key.
+      // This also re-computes the public key via P-256 EC math.
+      const result = await E2EE.importFromHex(myPrivateHex);
+      privateCryptoKey = result.privateCryptoKey;
 
-  // ── WebSocket ────────────────────────────────────────────────────────────────
+      // UI
+      document.getElementById('my-key-display').textContent = E2EE.shortId(myPublicKey);
+      document.getElementById('loading-screen').style.display = 'none';
+
+      renderContacts();
+      connectWS();
+    } catch (e) {
+      console.error('Key import failed:', e);
+      // Key is corrupt or invalid — force logout
+      logout();
+    }
+  })();
+
+  // ── WebSocket ─────────────────────────────────────────────────────────────
 
   function connectWS() {
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -357,66 +343,58 @@
 
     ws.onmessage = async ({ data }) => {
       const msg = JSON.parse(data);
-
       if (msg.type === 'history') {
-        for (const m of msg.messages) await handleIncoming(m, false);
+        for (const m of msg.messages) await handleIncoming(m);
         renderMessages();
       }
-
       if (msg.type === 'message') {
-        await handleIncoming(msg, true);
+        await handleIncoming(msg);
+        renderMessages();
       }
     };
 
-    // Auto-reconnect on drop
     ws.onclose = () => setTimeout(connectWS, 2000);
   }
 
   /**
-   * Handle a message record from the server.
-   * If we are the recipient → decrypt it (only possible with our private key).
-   * If we are the sender → we can't decrypt (encrypted with recipient's key),
-   *   so we fall back to the local sentCache for display.
+   * Handle a message record (either from history or live).
+   *
+   * With ECDH, the shared secret between Alice and Bob is symmetric:
+   *   ECDH(Alice_priv, Bob_pub) == ECDH(Bob_priv, Alice_pub)
+   *
+   * So Alice can decrypt BOTH messages she sent to Bob (using her private key
+   * + Bob's public key) AND messages she received from Bob. No special-casing needed.
    */
-  async function handleIncoming(m, renderNow) {
+  async function handleIncoming(m) {
     const isMine     = m.senderKey === myPublicKey;
     const contactKey = isMine ? m.recipientKey : m.senderKey;
 
     if (!msgStore[contactKey]) msgStore[contactKey] = [];
+    if (msgStore[contactKey].find(x => x.id === m.id)) return; // duplicate
 
-    // Avoid duplicates
-    if (msgStore[contactKey].find(x => x.id === m.id)) return;
-
-    if (isMine) {
-      // Our own message — use the locally cached plaintext if available
-      const sent = (sentCache[contactKey] || []).find(s => s.ts === m.timestamp);
-      msgStore[contactKey].push({
-        id:  m.id,
-        dir: 'out',
-        text: sent ? sent.text : null,  // null = we don't have the plaintext (old session)
-        ts:  m.timestamp,
-      });
-    } else {
-      // Received message — decrypt with our private key
-      let text;
-      try {
-        text = await E2EE.decryptMessage(m.encrypted, privateKeyJwk);
-      } catch {
-        text = '⚠️ Could not decrypt this message.';
-      }
-      msgStore[contactKey].push({ id: m.id, dir: 'in', text, ts: m.timestamp });
+    let text;
+    try {
+      // contactKey is the other party's public key — used for ECDH on both sides
+      text = await E2EE.decryptMessage(m.encrypted, privateCryptoKey, contactKey);
+    } catch {
+      text = '⚠️ Could not decrypt.';
     }
 
-    if (renderNow && contactKey === activeContact) renderMessages();
+    msgStore[contactKey].push({
+      id:  m.id,
+      dir: isMine ? 'out' : 'in',
+      text,
+      ts:  m.timestamp,
+    });
   }
 
-  // ── Contacts ─────────────────────────────────────────────────────────────────
+  // ── Contacts ──────────────────────────────────────────────────────────────
 
   function renderContacts() {
     const list = document.getElementById('contacts-list');
     list.innerHTML = '';
     for (const [key, { name }] of Object.entries(contacts)) {
-      const li   = document.createElement('li');
+      const li = document.createElement('li');
       li.className = 'contact-item' + (key === activeContact ? ' active' : '');
       li.innerHTML = `
         <div class="contact-name">${esc(name)}</div>
@@ -429,107 +407,87 @@
 
   function openConversation(key) {
     activeContact = key;
-    const { name } = contacts[key];
-
     document.getElementById('empty-state').classList.add('hidden');
     document.getElementById('chat-pane').classList.remove('hidden');
-    document.getElementById('chat-name').textContent = name;
+    document.getElementById('chat-name').textContent    = contacts[key]?.name || E2EE.shortId(key);
     document.getElementById('chat-key-hint').textContent = E2EE.shortId(key);
-
-    renderContacts(); // update active highlight
+    renderContacts();
     renderMessages();
     document.getElementById('msg-input').focus();
   }
 
-  // ── Messages ─────────────────────────────────────────────────────────────────
+  // ── Messages ──────────────────────────────────────────────────────────────
 
   function renderMessages() {
     if (!activeContact) return;
-    const msgs      = msgStore[activeContact] || [];
+    const msgs      = (msgStore[activeContact] || []).slice().sort((a, b) => a.ts < b.ts ? -1 : 1);
     const container = document.getElementById('messages');
 
-    container.innerHTML = msgs
-      .sort((a, b) => a.ts < b.ts ? -1 : 1)
-      .map(m => {
-        if (m.dir === 'out') {
-          const text = m.text ?? '<em style="opacity:.5">message sent (encrypted)</em>';
-          return `<div class="msg mine">
-            <div class="text">${m.text ? esc(m.text) : text}</div>
-            <div class="time">${fmtTime(m.ts)}</div>
-          </div>`;
-        }
-        return `<div class="msg theirs">
-          <div class="text">${esc(m.text)}</div>
-          <div class="time">${fmtTime(m.ts)}</div>
-        </div>`;
-      }).join('');
+    container.innerHTML = msgs.map(m => `
+      <div class="msg ${m.dir === 'out' ? 'mine' : 'theirs'}">
+        <div class="text">${esc(m.text)}</div>
+        <div class="time">${fmtTime(m.ts)}</div>
+      </div>
+    `).join('');
 
     container.scrollTop = container.scrollHeight;
   }
 
-  // ── Send ─────────────────────────────────────────────────────────────────────
+  // ── Send ──────────────────────────────────────────────────────────────────
 
   async function sendMessage() {
     const input = document.getElementById('msg-input');
     const text  = input.value.trim();
-    if (!text || !activeContact) return;
-
+    if (!text || !activeContact || !privateCryptoKey) return;
     input.value = '';
 
-    // Encrypt the message with the recipient's public key BEFORE sending.
-    // After this point, only the recipient can decrypt it.
+    const ts = new Date().toISOString();
+
+    // Encrypt before sending — server only ever sees the ciphertext
     let encrypted;
     try {
-      encrypted = await E2EE.encryptMessage(text, activeContact);
-    } catch {
-      alert('Encryption failed. Is the contact key valid?');
+      encrypted = await E2EE.encryptMessage(text, privateCryptoKey, activeContact);
+    } catch (e) {
+      alert('Encryption failed: ' + e.message);
       return;
     }
 
-    // Cache plaintext locally so we can show our own bubble.
-    // (We won't be able to decrypt this from the server later — it's encrypted with THEIR key.)
-    const ts = new Date().toISOString();
-    if (!sentCache[activeContact]) sentCache[activeContact] = [];
-    sentCache[activeContact].push({ text, ts });
-
     ws.send(JSON.stringify({ type: 'send', recipientKey: activeContact, encrypted }));
 
-    // Show immediately (optimistic — assume server receives it)
+    // Optimistic bubble — show immediately without waiting for server echo
     if (!msgStore[activeContact]) msgStore[activeContact] = [];
     msgStore[activeContact].push({ id: `local-${Date.now()}`, dir: 'out', text, ts });
     renderMessages();
   }
 
-  function onInputKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+  function onEnter(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   }
 
-  // ── Add Contact ──────────────────────────────────────────────────────────────
+  // ── Add Contact ───────────────────────────────────────────────────────────
 
   function openModal() {
     document.getElementById('contact-key-input').value  = '';
     document.getElementById('contact-name-input').value = '';
     document.getElementById('modal-error').classList.add('hidden');
     document.getElementById('modal-overlay').classList.remove('hidden');
+    setTimeout(() => document.getElementById('contact-key-input').focus(), 50);
   }
 
-  function closeModal(e) {
+  function maybeCloseModal(e) {
     if (e.target === document.getElementById('modal-overlay')) {
       document.getElementById('modal-overlay').classList.add('hidden');
     }
   }
 
   async function addContact() {
-    const key      = document.getElementById('contact-key-input').value.trim();
-    const name     = document.getElementById('contact-name-input').value.trim();
-    const errorEl  = document.getElementById('modal-error');
+    const key     = document.getElementById('contact-key-input').value.trim();
+    const name    = document.getElementById('contact-name-input').value.trim();
+    const errorEl = document.getElementById('modal-error');
     errorEl.classList.add('hidden');
 
     if (!key) {
-      errorEl.textContent = 'Please paste a public key.';
+      errorEl.textContent = 'Paste a public key.';
       errorEl.classList.remove('hidden');
       return;
     }
@@ -540,42 +498,39 @@
     }
 
     try {
-      await E2EE.validatePublicKey(key); // throws if the key is not a valid RSA public key
+      await E2EE.validatePublicKey(key);
     } catch {
-      errorEl.textContent = 'Invalid public key format. Make sure you copied the full base64 string.';
+      errorEl.textContent = 'Invalid public key format.';
       errorEl.classList.remove('hidden');
       return;
     }
 
     contacts[key] = { name: name || E2EE.shortId(key) };
     localStorage.setItem('contacts', JSON.stringify(contacts));
-
     document.getElementById('modal-overlay').classList.add('hidden');
     renderContacts();
     openConversation(key);
   }
 
-  // ── Misc ─────────────────────────────────────────────────────────────────────
+  // ── Misc ──────────────────────────────────────────────────────────────────
 
   function copyMyKey() {
     navigator.clipboard.writeText(myPublicKey);
-    const btn = event.target;
+    const btn = document.getElementById('btn-copy-key');
     btn.textContent = 'Copied!';
     setTimeout(() => btn.textContent = 'Copy', 1500);
   }
 
   function logout() {
-    localStorage.removeItem('privateKey');
+    localStorage.removeItem('privateKeyHex');
     localStorage.removeItem('publicKey');
     location.href = '/';
   }
 
   function esc(str) {
     return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function fmtTime(ts) {

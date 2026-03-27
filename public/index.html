@@ -24,7 +24,7 @@
       border-radius: 12px;
       padding: 2rem;
       width: 100%;
-      max-width: 520px;
+      max-width: 540px;
     }
 
     h1 { font-size: 1.5rem; color: #38bdf8; margin-bottom: 0.25rem; }
@@ -46,12 +46,7 @@
       cursor: pointer;
       font-size: 0.9rem;
     }
-    .tab.active {
-      background: #38bdf8;
-      border-color: #38bdf8;
-      color: #0f172a;
-      font-weight: 600;
-    }
+    .tab.active { background: #38bdf8; border-color: #38bdf8; color: #0f172a; font-weight: 600; }
 
     .panel { display: flex; flex-direction: column; gap: 1rem; }
     .panel.hidden { display: none; }
@@ -63,27 +58,39 @@
       padding: 0.75rem 1rem;
       font-size: 0.85rem;
       color: #94a3b8;
-      line-height: 1.5;
+      line-height: 1.6;
     }
-    .info-box strong { color: #f8fafc; }
+    .info-box strong { color: #f1f5f9; }
 
-    label { font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 0.3rem; }
+    label { font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 0.3rem; }
 
-    textarea, input[type="text"] {
+    /* The star of the show — hex private key display */
+    .hex-key {
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      color: #fbbf24;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      word-break: break-all;
+      line-height: 1.6;
+      user-select: all;
+    }
+
+    textarea, input[type="text"], input[type="password"] {
       width: 100%;
       background: #0f172a;
       border: 1px solid #334155;
       border-radius: 8px;
       color: #e2e8f0;
       padding: 0.6rem 0.75rem;
-      font-family: monospace;
-      font-size: 0.8rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
       resize: vertical;
     }
-    textarea:focus, input[type="text"]:focus {
-      outline: none;
-      border-color: #38bdf8;
-    }
+    textarea:focus, input:focus { outline: none; border-color: #38bdf8; }
 
     .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
@@ -95,36 +102,40 @@
       border-radius: 8px;
       cursor: pointer;
       font-size: 0.85rem;
+      white-space: nowrap;
     }
     button:hover { background: #475569; }
-    button.primary {
-      background: #38bdf8;
-      color: #0f172a;
-      font-weight: 600;
-    }
+    button.primary { background: #38bdf8; color: #0f172a; font-weight: 600; }
     button.primary:hover { background: #7dd3fc; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    .key-section { display: flex; flex-direction: column; gap: 0.5rem; }
+    .key-section { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    .badge {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-warn { background: #78350f; color: #fcd34d; }
+    .badge-ok   { background: #064e3b; color: #34d399; }
 
     .error { color: #f87171; font-size: 0.85rem; }
     .hidden { display: none !important; }
 
-    .badge {
-      display: inline-block;
-      background: #064e3b;
-      color: #34d399;
-      border: 1px solid #059669;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-    }
+    .divider { border: none; border-top: 1px solid #334155; }
+
+    .spinner { display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 <div class="card">
   <h1>🔐 Chat E2EE</h1>
-  <p class="subtitle">End-to-end encrypted chat. Your private key never leaves your device.</p>
+  <p class="subtitle">End-to-end encrypted. Your private key never leaves your device.</p>
 
   <div class="tabs">
     <button class="tab active" id="tab-new"   onclick="showTab('new')">New user</button>
@@ -134,28 +145,35 @@
   <!-- ── New User ─────────────────────────────────── -->
   <div class="panel" id="panel-new">
     <div class="info-box">
-      Your browser will generate a <strong>key pair</strong>.<br>
-      <strong>Private key</strong> — save this file. It's like your password.<br>
+      Your browser generates a key pair locally — nothing is sent to the server.<br>
+      <strong>Private key</strong> — 64-char hex string. Write it down or save the file.<br>
       <strong>Public key</strong> — share this with friends so they can message you.
     </div>
 
     <button id="btn-generate" onclick="generateKeys()">Generate Key Pair</button>
 
     <div id="keys-result" class="hidden" style="display:flex;flex-direction:column;gap:1rem;">
+
       <div class="key-section">
-        <label>🔑 Private Key <span class="badge">save this</span></label>
-        <textarea id="private-key-display" rows="5" readonly></textarea>
+        <label>
+          🔑 Private Key &nbsp;<span class="badge badge-warn">save this — never share it</span>
+        </label>
+        <div class="hex-key" id="private-key-hex" onclick="selectAll(this)"></div>
         <div class="btn-row">
-          <button onclick="downloadPrivateKey()">⬇ Download private-key.json</button>
-          <button onclick="copyText('private-key-display', this)">Copy</button>
+          <button onclick="downloadKey()">⬇ Download private-key.json</button>
+          <button onclick="copyHex()">Copy hex</button>
         </div>
       </div>
 
+      <hr class="divider" />
+
       <div class="key-section">
-        <label>📢 Public Key <span style="color:#94a3b8;font-size:0.8rem">— share this with friends</span></label>
-        <textarea id="public-key-display" rows="3" readonly></textarea>
+        <label>
+          📢 Public Key &nbsp;<span class="badge badge-ok">safe to share</span>
+        </label>
+        <textarea id="public-key-b64" rows="3" readonly onclick="this.select()"></textarea>
         <div class="btn-row">
-          <button onclick="copyText('public-key-display', this)">Copy</button>
+          <button onclick="copyPublicKey()">Copy public key</button>
         </div>
       </div>
 
@@ -166,86 +184,162 @@
   <!-- ── Returning User ───────────────────────────── -->
   <div class="panel hidden" id="panel-login">
     <div class="info-box">
-      Paste your <strong>private key JSON</strong> below.<br>
-      Your browser will derive your public key from it locally — nothing is sent to the server.
+      Enter your <strong>64-character hex private key</strong>.<br>
+      Your browser will compute your public key from it locally — the server never sees it.
     </div>
 
     <div class="key-section">
-      <label>Private Key JSON</label>
-      <textarea id="login-key-input" rows="6" placeholder='{"kty":"RSA","n":"...","e":"...",...}'></textarea>
+      <label>Private Key (64 hex characters)</label>
+      <input type="text"
+             id="login-hex"
+             maxlength="64"
+             placeholder="56c9905166c0faf18cfc252f11bf53ab..."
+             oninput="onHexInput(this)"
+             spellcheck="false"
+             autocomplete="off" />
+      <small id="hex-counter" style="color:#475569;font-size:0.75rem">0 / 64 characters</small>
     </div>
 
     <p id="login-error" class="error hidden"></p>
-    <button class="primary" onclick="login()">Login</button>
+    <button class="primary" id="btn-login" onclick="login()">Login</button>
+
+    <hr class="divider" />
+
+    <div class="key-section">
+      <label>Or upload your <code style="color:#94a3b8">private-key.json</code> file</label>
+      <input type="file" id="key-file" accept=".json,application/json" onchange="loadFile(this)" style="color:#94a3b8;font-size:0.85rem" />
+    </div>
   </div>
 </div>
 
 <script src="crypto.js"></script>
 <script>
-  // If already logged in, skip setup and go straight to chat
-  if (localStorage.getItem('privateKey')) {
+  // If already logged in, skip setup
+  if (localStorage.getItem('privateKeyHex')) {
     location.href = '/chat.html';
   }
 
-  let _generatedPrivateKey = null;
-  let _generatedPublicKey  = null;
+  let _privateHex = null;
+  let _publicB64  = null;
+
+  // ── Generate ────────────────────────────────────────────────────────────────
 
   async function generateKeys() {
     const btn = document.getElementById('btn-generate');
     btn.disabled    = true;
-    btn.textContent = 'Generating…';
+    btn.innerHTML   = '<span class="spinner">⟳</span> Generating…';
 
     try {
-      const { privateKeyJwk, publicKeyB64 } = await E2EE.generateKeyPair();
-      _generatedPrivateKey = privateKeyJwk;
-      _generatedPublicKey  = publicKeyB64;
+      const { privateHex, publicB64 } = await E2EE.generateKeyPair();
+      _privateHex = privateHex;
+      _publicB64  = publicB64;
 
-      document.getElementById('private-key-display').value = JSON.stringify(privateKeyJwk, null, 2);
-      document.getElementById('public-key-display').value  = publicKeyB64;
+      document.getElementById('private-key-hex').textContent = privateHex;
+      document.getElementById('public-key-b64').value = publicB64;
       document.getElementById('keys-result').classList.remove('hidden');
     } finally {
-      btn.disabled    = false;
-      btn.textContent = 'Regenerate Key Pair';
+      btn.disabled  = false;
+      btn.innerHTML = 'Regenerate Key Pair';
     }
   }
 
-  function downloadPrivateKey() {
-    const blob = new Blob(
-      [JSON.stringify(_generatedPrivateKey, null, 2)],
-      { type: 'application/json' }
-    );
-    const url = URL.createObjectURL(blob);
-    const a   = Object.assign(document.createElement('a'), { href: url, download: 'private-key.json' });
+  function downloadKey() {
+    const payload = JSON.stringify({ version: 1, privateKey: _privateHex, publicKey: _publicB64 }, null, 2);
+    const blob    = new Blob([payload], { type: 'application/json' });
+    const url     = URL.createObjectURL(blob);
+    const a       = Object.assign(document.createElement('a'), { href: url, download: 'private-key.json' });
     a.click();
     URL.revokeObjectURL(url);
   }
 
+  function copyHex() {
+    navigator.clipboard.writeText(_privateHex);
+    flashBtn(event.target, 'Copied!');
+  }
+
+  function copyPublicKey() {
+    navigator.clipboard.writeText(_publicB64);
+    flashBtn(event.target, 'Copied!');
+  }
+
   function enterChat() {
-    localStorage.setItem('privateKey', JSON.stringify(_generatedPrivateKey));
-    localStorage.setItem('publicKey',  _generatedPublicKey);
+    localStorage.setItem('privateKeyHex', _privateHex);
+    localStorage.setItem('publicKey',     _publicB64);
     location.href = '/chat.html';
   }
 
+  // ── Login ───────────────────────────────────────────────────────────────────
+
+  function onHexInput(el) {
+    const val = el.value.trim().toLowerCase().replace(/[^0-9a-f]/g, '');
+    el.value = val;
+    document.getElementById('hex-counter').textContent = `${val.length} / 64 characters`;
+  }
+
   async function login() {
-    const raw     = document.getElementById('login-key-input').value.trim();
+    const hex     = document.getElementById('login-hex').value.trim().toLowerCase();
+    const errorEl = document.getElementById('login-error');
+    const btn     = document.getElementById('btn-login');
+    errorEl.classList.add('hidden');
+
+    if (hex.length !== 64) {
+      errorEl.textContent = 'Private key must be exactly 64 hex characters.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Computing public key…';
+
+    try {
+      // Derive public key from private key via P-256 EC math (done in the browser)
+      const { publicB64 } = await E2EE.importFromHex(hex);
+      localStorage.setItem('privateKeyHex', hex);
+      localStorage.setItem('publicKey',     publicB64);
+      location.href = '/chat.html';
+    } catch (e) {
+      errorEl.textContent = `Invalid key: ${e.message}`;
+      errorEl.classList.remove('hidden');
+      btn.disabled    = false;
+      btn.textContent = 'Login';
+    }
+  }
+
+  async function loadFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
     const errorEl = document.getElementById('login-error');
     errorEl.classList.add('hidden');
 
     try {
-      const privateKeyJwk = JSON.parse(raw);
-      if (privateKeyJwk.kty !== 'RSA') throw new Error('not an RSA key');
+      const text = await file.text();
+      const obj  = JSON.parse(text);
+      const hex  = (obj.privateKey || '').toLowerCase();
 
-      // Derive public key locally — the server never sees the private key
-      const publicKeyB64 = await E2EE.derivePublicKey(privateKeyJwk);
+      if (!/^[0-9a-f]{64}$/.test(hex)) throw new Error('privateKey field is not a valid 64-char hex string.');
 
-      localStorage.setItem('privateKey', JSON.stringify(privateKeyJwk));
-      localStorage.setItem('publicKey',  publicKeyB64);
-      location.href = '/chat.html';
-    } catch {
-      errorEl.textContent = 'Invalid key. Make sure you pasted the full JSON from your private-key.json file.';
+      // Fill the hex input so the user can see it
+      document.getElementById('login-hex').value = hex;
+      document.getElementById('hex-counter').textContent = `${hex.length} / 64 characters`;
+
+      // If the file also has the public key, we can skip EC computation
+      if (obj.publicKey) {
+        await E2EE.validatePublicKey(obj.publicKey);
+        localStorage.setItem('privateKeyHex', hex);
+        localStorage.setItem('publicKey',     obj.publicKey);
+        location.href = '/chat.html';
+      } else {
+        // Derive from hex
+        await login();
+      }
+    } catch (e) {
+      errorEl.textContent = `Could not read file: ${e.message}`;
       errorEl.classList.remove('hidden');
     }
   }
+
+  // ── Tab / utils ─────────────────────────────────────────────────────────────
 
   function showTab(tab) {
     document.getElementById('panel-new').classList.toggle('hidden', tab !== 'new');
@@ -254,11 +348,17 @@
     document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   }
 
-  function copyText(id, btn) {
-    navigator.clipboard.writeText(document.getElementById(id).value);
+  function flashBtn(btn, label) {
     const orig = btn.textContent;
-    btn.textContent = 'Copied!';
+    btn.textContent = label;
     setTimeout(() => btn.textContent = orig, 1500);
+  }
+
+  function selectAll(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
   }
 </script>
 </body>
