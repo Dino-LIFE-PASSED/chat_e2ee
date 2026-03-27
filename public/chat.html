@@ -399,6 +399,12 @@
     localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
   }
 
+  function syncContacts() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'update_contacts', contacts }));
+    }
+  }
+
   // ── Async init ────────────────────────────────────────────────────────────
 
   (async () => {
@@ -443,6 +449,20 @@
       // Single live friend request
       if (msg.type === 'friend_request') {
         addPendingRequest(msg.request);
+      }
+
+      // Contacts synced from server — authoritative across devices
+      if (msg.type === 'contacts') {
+        if (Object.keys(msg.contacts).length > 0) {
+          // Server has contacts — use them as source of truth
+          contacts = msg.contacts;
+          saveContacts();
+        } else if (Object.keys(contacts).length > 0) {
+          // Server has nothing but we have local contacts (e.g. first login after this update)
+          // Push local up so they're available on other devices going forward
+          syncContacts();
+        }
+        renderContacts();
       }
 
       // Batch of queued requests delivered on login
@@ -527,6 +547,7 @@
     if (newName && activeContact) {
       contacts[activeContact].name = newName;
       saveContacts();
+      syncContacts();
       nameEl.textContent = newName;
       renderContacts();
     }
@@ -693,6 +714,7 @@
 
     contacts[key] = { name: name || E2EE.shortId(key) };
     saveContacts();
+    syncContacts();
 
     // Notify the other user so they can add you back without copy-pasting your key
     if (ws && ws.readyState === WebSocket.OPEN) {

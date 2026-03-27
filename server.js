@@ -29,6 +29,10 @@ const history = [];
 // Pending friend requests for offline users: { id, from, to, timestamp }
 const pendingRequests = [];
 
+// Contacts per user — so they survive across devices/sessions.
+// publicKey → { [contactKey]: { name } }
+const userContacts = new Map();
+
 let nextId = 1;
 
 // -------------------------------------------------------
@@ -68,12 +72,21 @@ wss.on('connection', (ws) => {
       );
       ws.send(JSON.stringify({ type: 'history', messages: past }));
 
+      // Send stored contacts so the user sees the same list on every device
+      ws.send(JSON.stringify({ type: 'contacts', contacts: userContacts.get(myKey) || {} }));
+
       // Flush any queued friend requests for this user
       const queued = pendingRequests.filter(r => r.to === myKey);
       if (queued.length > 0) {
         ws.send(JSON.stringify({ type: 'friend_requests', requests: queued }));
         queued.forEach(r => pendingRequests.splice(pendingRequests.indexOf(r), 1));
       }
+    }
+
+    // ── update_contacts ────────────────────────────────
+    // Client syncs their contact list to the server after any change.
+    if (msg.type === 'update_contacts' && myKey) {
+      userContacts.set(myKey, msg.contacts);
     }
 
     // ── friend_request ────────────────────────────────
