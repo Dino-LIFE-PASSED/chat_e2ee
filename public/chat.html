@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat E2EE</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ─────────────────────────────────── */
+    aside {
+      width: 260px;
+      min-width: 260px;
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .my-key-box {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #334155;
+    }
+    .my-key-box .label {
+      font-size: 0.7rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.3rem;
+    }
+    .my-key-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .my-key-id {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #38bdf8;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .contacts-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #334155;
+    }
+    .contacts-header span { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    #contacts-list {
+      list-style: none;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .contact-item {
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.1s;
+    }
+    .contact-item:hover { background: #0f172a; }
+    .contact-item.active {
+      background: #0f172a;
+      border-left-color: #38bdf8;
+    }
+    .contact-name { font-size: 0.9rem; }
+    .contact-key  { font-size: 0.7rem; font-family: monospace; color: #64748b; margin-top: 2px; }
+
+    .sidebar-footer {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #334155;
+    }
+
+    /* ── Main chat area ──────────────────────────── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+      gap: 0.5rem;
+    }
+    #empty-state .icon { font-size: 3rem; }
+    #empty-state p { font-size: 0.9rem; }
+
+    #chat-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #chat-pane.hidden { display: none; }
+
+    #chat-header {
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #1e293b;
+    }
+    #chat-header .name { font-weight: 600; }
+    #chat-header .e2ee-badge {
+      font-size: 0.7rem;
+      background: #064e3b;
+      color: #34d399;
+      border: 1px solid #059669;
+      padding: 1px 7px;
+      border-radius: 999px;
+    }
+    #chat-header .key-hint {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-family: monospace;
+      margin-left: auto;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .msg {
+      max-width: 70%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .msg .text { word-break: break-word; }
+    .msg .time { font-size: 0.7rem; margin-top: 3px; opacity: 0.6; }
+
+    .msg.mine {
+      background: #1d4ed8;
+      align-self: flex-end;
+      border-bottom-right-radius: 3px;
+    }
+    .msg.theirs {
+      background: #1e293b;
+      border: 1px solid #334155;
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+    }
+    .msg.system {
+      align-self: center;
+      font-size: 0.75rem;
+      color: #64748b;
+      background: none;
+      border: none;
+      padding: 0.25rem 0;
+    }
+
+    .input-row {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #334155;
+      display: flex;
+      gap: 0.5rem;
+      background: #1e293b;
+    }
+    #msg-input {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+    }
+    #msg-input:focus { outline: none; border-color: #38bdf8; }
+
+    /* ── Modal ───────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .modal h3 { color: #f1f5f9; font-size: 1rem; }
+
+    /* ── Shared button/input styles ──────────────── */
+    button {
+      background: #334155;
+      border: none;
+      color: #e2e8f0;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    button:hover { background: #475569; }
+    button.primary { background: #38bdf8; color: #0f172a; font-weight: 600; }
+    button.primary:hover { background: #7dd3fc; }
+    button.danger { background: #7f1d1d; color: #fca5a5; }
+    button.danger:hover { background: #991b1b; }
+
+    label { font-size: 0.85rem; color: #94a3b8; }
+    textarea, input[type="text"] {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      resize: vertical;
+    }
+    textarea:focus, input[type="text"]:focus { outline: none; border-color: #38bdf8; }
+
+    .error { color: #f87171; font-size: 0.85rem; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ───────────────────────────────────── -->
+<aside>
+  <div class="my-key-box">
+    <div class="label">Your public key (share this)</div>
+    <div class="my-key-row">
+      <span class="my-key-id" id="my-key-display"></span>
+      <button onclick="copyMyKey()" title="Copy full public key">Copy</button>
+    </div>
+  </div>
+
+  <div class="contacts-header">
+    <span>Contacts</span>
+    <button onclick="openModal()">+ Add</button>
+  </div>
+
+  <ul id="contacts-list"></ul>
+
+  <div class="sidebar-footer">
+    <button class="danger" style="width:100%" onclick="logout()">Logout</button>
+  </div>
+</aside>
+
+<!-- ── Main Area ─────────────────────────────────── -->
+<main>
+  <div id="empty-state">
+    <div class="icon">💬</div>
+    <p>Add a contact and start a conversation.</p>
+    <p style="font-size:0.8rem;color:#334155">All messages are encrypted before they leave your browser.</p>
+  </div>
+
+  <div id="chat-pane" class="hidden">
+    <div id="chat-header">
+      <span class="name" id="chat-name"></span>
+      <span class="e2ee-badge">🔒 E2EE</span>
+      <span class="key-hint" id="chat-key-hint"></span>
+    </div>
+    <div id="messages"></div>
+    <div class="input-row">
+      <input id="msg-input" type="text" placeholder="Type a message…" onkeydown="onInputKey(event)" />
+      <button class="primary" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+</main>
+
+<!-- ── Add Contact Modal ─────────────────────────── -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <h3>Add Contact</h3>
+    <label>Their Public Key</label>
+    <textarea id="contact-key-input" rows="4" placeholder="Paste their public key (base64)…"></textarea>
+    <label>Nickname <span style="color:#475569">(optional)</span></label>
+    <input type="text" id="contact-name-input" placeholder="e.g. Alice" />
+    <p id="modal-error" class="error hidden"></p>
+    <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+      <button onclick="document.getElementById('modal-overlay').classList.add('hidden')">Cancel</button>
+      <button class="primary" onclick="addContact()">Add Contact</button>
+    </div>
+  </div>
+</div>
+
+<script src="crypto.js"></script>
+<script>
+  // ── Bootstrap ────────────────────────────────────────────────────────────────
+
+  const privateKeyJwk = JSON.parse(localStorage.getItem('privateKey') || 'null');
+  const myPublicKey   = localStorage.getItem('publicKey') || null;
+
+  if (!privateKeyJwk || !myPublicKey) {
+    location.href = '/'; // not logged in
+  }
+
+  // contacts: { [publicKeyB64]: { name: string } }
+  let contacts = JSON.parse(localStorage.getItem('contacts') || '{}');
+
+  // Received messages from server (decrypted): { [contactKey]: [{id, text, ts, dir}] }
+  // dir = 'in' | 'out'
+  const msgStore = {};
+
+  // Sent messages we cached locally (so we can show our own bubbles).
+  // Key = contactPublicKey → [{ text, ts }]
+  // We store plaintext locally because we encrypt WITH their key — only they can decrypt.
+  const sentCache = {};
+
+  let activeContact = null;
+  let ws = null;
+
+  // ── UI init ──────────────────────────────────────────────────────────────────
+
+  document.getElementById('my-key-display').textContent = E2EE.shortId(myPublicKey);
+  renderContacts();
+  connectWS();
+
+  // ── WebSocket ────────────────────────────────────────────────────────────────
+
+  function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}`);
+
+    ws.onopen = () => {
+      // Send only our public key — never the private key
+      ws.send(JSON.stringify({ type: 'identify', publicKey: myPublicKey }));
+    };
+
+    ws.onmessage = async ({ data }) => {
+      const msg = JSON.parse(data);
+
+      if (msg.type === 'history') {
+        for (const m of msg.messages) await handleIncoming(m, false);
+        renderMessages();
+      }
+
+      if (msg.type === 'message') {
+        await handleIncoming(msg, true);
+      }
+    };
+
+    // Auto-reconnect on drop
+    ws.onclose = () => setTimeout(connectWS, 2000);
+  }
+
+  /**
+   * Handle a message record from the server.
+   * If we are the recipient → decrypt it (only possible with our private key).
+   * If we are the sender → we can't decrypt (encrypted with recipient's key),
+   *   so we fall back to the local sentCache for display.
+   */
+  async function handleIncoming(m, renderNow) {
+    const isMine     = m.senderKey === myPublicKey;
+    const contactKey = isMine ? m.recipientKey : m.senderKey;
+
+    if (!msgStore[contactKey]) msgStore[contactKey] = [];
+
+    // Avoid duplicates
+    if (msgStore[contactKey].find(x => x.id === m.id)) return;
+
+    if (isMine) {
+      // Our own message — use the locally cached plaintext if available
+      const sent = (sentCache[contactKey] || []).find(s => s.ts === m.timestamp);
+      msgStore[contactKey].push({
+        id:  m.id,
+        dir: 'out',
+        text: sent ? sent.text : null,  // null = we don't have the plaintext (old session)
+        ts:  m.timestamp,
+      });
+    } else {
+      // Received message — decrypt with our private key
+      let text;
+      try {
+        text = await E2EE.decryptMessage(m.encrypted, privateKeyJwk);
+      } catch {
+        text = '⚠️ Could not decrypt this message.';
+      }
+      msgStore[contactKey].push({ id: m.id, dir: 'in', text, ts: m.timestamp });
+    }
+
+    if (renderNow && contactKey === activeContact) renderMessages();
+  }
+
+  // ── Contacts ─────────────────────────────────────────────────────────────────
+
+  function renderContacts() {
+    const list = document.getElementById('contacts-list');
+    list.innerHTML = '';
+    for (const [key, { name }] of Object.entries(contacts)) {
+      const li   = document.createElement('li');
+      li.className = 'contact-item' + (key === activeContact ? ' active' : '');
+      li.innerHTML = `
+        <div class="contact-name">${esc(name)}</div>
+        <div class="contact-key">${E2EE.shortId(key)}</div>
+      `;
+      li.onclick = () => openConversation(key);
+      list.appendChild(li);
+    }
+  }
+
+  function openConversation(key) {
+    activeContact = key;
+    const { name } = contacts[key];
+
+    document.getElementById('empty-state').classList.add('hidden');
+    document.getElementById('chat-pane').classList.remove('hidden');
+    document.getElementById('chat-name').textContent = name;
+    document.getElementById('chat-key-hint').textContent = E2EE.shortId(key);
+
+    renderContacts(); // update active highlight
+    renderMessages();
+    document.getElementById('msg-input').focus();
+  }
+
+  // ── Messages ─────────────────────────────────────────────────────────────────
+
+  function renderMessages() {
+    if (!activeContact) return;
+    const msgs      = msgStore[activeContact] || [];
+    const container = document.getElementById('messages');
+
+    container.innerHTML = msgs
+      .sort((a, b) => a.ts < b.ts ? -1 : 1)
+      .map(m => {
+        if (m.dir === 'out') {
+          const text = m.text ?? '<em style="opacity:.5">message sent (encrypted)</em>';
+          return `<div class="msg mine">
+            <div class="text">${m.text ? esc(m.text) : text}</div>
+            <div class="time">${fmtTime(m.ts)}</div>
+          </div>`;
+        }
+        return `<div class="msg theirs">
+          <div class="text">${esc(m.text)}</div>
+          <div class="time">${fmtTime(m.ts)}</div>
+        </div>`;
+      }).join('');
+
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // ── Send ─────────────────────────────────────────────────────────────────────
+
+  async function sendMessage() {
+    const input = document.getElementById('msg-input');
+    const text  = input.value.trim();
+    if (!text || !activeContact) return;
+
+    input.value = '';
+
+    // Encrypt the message with the recipient's public key BEFORE sending.
+    // After this point, only the recipient can decrypt it.
+    let encrypted;
+    try {
+      encrypted = await E2EE.encryptMessage(text, activeContact);
+    } catch {
+      alert('Encryption failed. Is the contact key valid?');
+      return;
+    }
+
+    // Cache plaintext locally so we can show our own bubble.
+    // (We won't be able to decrypt this from the server later — it's encrypted with THEIR key.)
+    const ts = new Date().toISOString();
+    if (!sentCache[activeContact]) sentCache[activeContact] = [];
+    sentCache[activeContact].push({ text, ts });
+
+    ws.send(JSON.stringify({ type: 'send', recipientKey: activeContact, encrypted }));
+
+    // Show immediately (optimistic — assume server receives it)
+    if (!msgStore[activeContact]) msgStore[activeContact] = [];
+    msgStore[activeContact].push({ id: `local-${Date.now()}`, dir: 'out', text, ts });
+    renderMessages();
+  }
+
+  function onInputKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  // ── Add Contact ──────────────────────────────────────────────────────────────
+
+  function openModal() {
+    document.getElementById('contact-key-input').value  = '';
+    document.getElementById('contact-name-input').value = '';
+    document.getElementById('modal-error').classList.add('hidden');
+    document.getElementById('modal-overlay').classList.remove('hidden');
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modal-overlay')) {
+      document.getElementById('modal-overlay').classList.add('hidden');
+    }
+  }
+
+  async function addContact() {
+    const key      = document.getElementById('contact-key-input').value.trim();
+    const name     = document.getElementById('contact-name-input').value.trim();
+    const errorEl  = document.getElementById('modal-error');
+    errorEl.classList.add('hidden');
+
+    if (!key) {
+      errorEl.textContent = 'Please paste a public key.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    if (key === myPublicKey) {
+      errorEl.textContent = "That's your own public key.";
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      await E2EE.validatePublicKey(key); // throws if the key is not a valid RSA public key
+    } catch {
+      errorEl.textContent = 'Invalid public key format. Make sure you copied the full base64 string.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    contacts[key] = { name: name || E2EE.shortId(key) };
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+
+    document.getElementById('modal-overlay').classList.add('hidden');
+    renderContacts();
+    openConversation(key);
+  }
+
+  // ── Misc ─────────────────────────────────────────────────────────────────────
+
+  function copyMyKey() {
+    navigator.clipboard.writeText(myPublicKey);
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  }
+
+  function logout() {
+    localStorage.removeItem('privateKey');
+    localStorage.removeItem('publicKey');
+    location.href = '/';
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function fmtTime(ts) {
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+</script>
+</body>
+</html>

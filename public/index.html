@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat E2EE — Setup</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h1 { font-size: 1.5rem; color: #38bdf8; margin-bottom: 0.25rem; }
+    .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.75rem;
+    }
+    .tab {
+      background: none;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .tab.active {
+      background: #38bdf8;
+      border-color: #38bdf8;
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .panel { display: flex; flex-direction: column; gap: 1rem; }
+    .panel.hidden { display: none; }
+
+    .info-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    .info-box strong { color: #f8fafc; }
+
+    label { font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 0.3rem; }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 0.6rem 0.75rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      resize: vertical;
+    }
+    textarea:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    button {
+      background: #334155;
+      border: none;
+      color: #e2e8f0;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    button:hover { background: #475569; }
+    button.primary {
+      background: #38bdf8;
+      color: #0f172a;
+      font-weight: 600;
+    }
+    button.primary:hover { background: #7dd3fc; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .key-section { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .error { color: #f87171; font-size: 0.85rem; }
+    .hidden { display: none !important; }
+
+    .badge {
+      display: inline-block;
+      background: #064e3b;
+      color: #34d399;
+      border: 1px solid #059669;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>🔐 Chat E2EE</h1>
+  <p class="subtitle">End-to-end encrypted chat. Your private key never leaves your device.</p>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-new"   onclick="showTab('new')">New user</button>
+    <button class="tab"        id="tab-login" onclick="showTab('login')">I have a key</button>
+  </div>
+
+  <!-- ── New User ─────────────────────────────────── -->
+  <div class="panel" id="panel-new">
+    <div class="info-box">
+      Your browser will generate a <strong>key pair</strong>.<br>
+      <strong>Private key</strong> — save this file. It's like your password.<br>
+      <strong>Public key</strong> — share this with friends so they can message you.
+    </div>
+
+    <button id="btn-generate" onclick="generateKeys()">Generate Key Pair</button>
+
+    <div id="keys-result" class="hidden" style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="key-section">
+        <label>🔑 Private Key <span class="badge">save this</span></label>
+        <textarea id="private-key-display" rows="5" readonly></textarea>
+        <div class="btn-row">
+          <button onclick="downloadPrivateKey()">⬇ Download private-key.json</button>
+          <button onclick="copyText('private-key-display', this)">Copy</button>
+        </div>
+      </div>
+
+      <div class="key-section">
+        <label>📢 Public Key <span style="color:#94a3b8;font-size:0.8rem">— share this with friends</span></label>
+        <textarea id="public-key-display" rows="3" readonly></textarea>
+        <div class="btn-row">
+          <button onclick="copyText('public-key-display', this)">Copy</button>
+        </div>
+      </div>
+
+      <button class="primary" onclick="enterChat()">Enter Chat →</button>
+    </div>
+  </div>
+
+  <!-- ── Returning User ───────────────────────────── -->
+  <div class="panel hidden" id="panel-login">
+    <div class="info-box">
+      Paste your <strong>private key JSON</strong> below.<br>
+      Your browser will derive your public key from it locally — nothing is sent to the server.
+    </div>
+
+    <div class="key-section">
+      <label>Private Key JSON</label>
+      <textarea id="login-key-input" rows="6" placeholder='{"kty":"RSA","n":"...","e":"...",...}'></textarea>
+    </div>
+
+    <p id="login-error" class="error hidden"></p>
+    <button class="primary" onclick="login()">Login</button>
+  </div>
+</div>
+
+<script src="crypto.js"></script>
+<script>
+  // If already logged in, skip setup and go straight to chat
+  if (localStorage.getItem('privateKey')) {
+    location.href = '/chat.html';
+  }
+
+  let _generatedPrivateKey = null;
+  let _generatedPublicKey  = null;
+
+  async function generateKeys() {
+    const btn = document.getElementById('btn-generate');
+    btn.disabled    = true;
+    btn.textContent = 'Generating…';
+
+    try {
+      const { privateKeyJwk, publicKeyB64 } = await E2EE.generateKeyPair();
+      _generatedPrivateKey = privateKeyJwk;
+      _generatedPublicKey  = publicKeyB64;
+
+      document.getElementById('private-key-display').value = JSON.stringify(privateKeyJwk, null, 2);
+      document.getElementById('public-key-display').value  = publicKeyB64;
+      document.getElementById('keys-result').classList.remove('hidden');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Regenerate Key Pair';
+    }
+  }
+
+  function downloadPrivateKey() {
+    const blob = new Blob(
+      [JSON.stringify(_generatedPrivateKey, null, 2)],
+      { type: 'application/json' }
+    );
+    const url = URL.createObjectURL(blob);
+    const a   = Object.assign(document.createElement('a'), { href: url, download: 'private-key.json' });
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function enterChat() {
+    localStorage.setItem('privateKey', JSON.stringify(_generatedPrivateKey));
+    localStorage.setItem('publicKey',  _generatedPublicKey);
+    location.href = '/chat.html';
+  }
+
+  async function login() {
+    const raw     = document.getElementById('login-key-input').value.trim();
+    const errorEl = document.getElementById('login-error');
+    errorEl.classList.add('hidden');
+
+    try {
+      const privateKeyJwk = JSON.parse(raw);
+      if (privateKeyJwk.kty !== 'RSA') throw new Error('not an RSA key');
+
+      // Derive public key locally — the server never sees the private key
+      const publicKeyB64 = await E2EE.derivePublicKey(privateKeyJwk);
+
+      localStorage.setItem('privateKey', JSON.stringify(privateKeyJwk));
+      localStorage.setItem('publicKey',  publicKeyB64);
+      location.href = '/chat.html';
+    } catch {
+      errorEl.textContent = 'Invalid key. Make sure you pasted the full JSON from your private-key.json file.';
+      errorEl.classList.remove('hidden');
+    }
+  }
+
+  function showTab(tab) {
+    document.getElementById('panel-new').classList.toggle('hidden', tab !== 'new');
+    document.getElementById('panel-login').classList.toggle('hidden', tab !== 'login');
+    document.getElementById('tab-new').classList.toggle('active', tab === 'new');
+    document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  }
+
+  function copyText(id, btn) {
+    navigator.clipboard.writeText(document.getElementById(id).value);
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  }
+</script>
+</body>
+</html>

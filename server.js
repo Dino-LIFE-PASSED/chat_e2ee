@@ -1,35 +1,92 @@
-const express = require('express');
-const app = express();
+const express    = require('express');
+const http       = require('http');
+const WebSocket  = require('ws');
+const path       = require('path');
+
+const app    = express();
+const server = http.createServer(app);
+const wss    = new WebSocket.Server({ server });
+
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (_req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Chat E2EE</title>
-        <style>
-          body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #0f172a; color: #f1f5f9; }
-          .card { text-align: center; padding: 2rem; border: 1px solid #334155; border-radius: 12px; }
-          h1 { color: #38bdf8; }
-          .badge { display: inline-block; background: #22c55e; color: #fff; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; margin-top: 1rem; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h1>Chat E2EE</h1>
-          <p>Deployment test successful</p>
-          <span class="badge">Running on port ${PORT}</span>
-        </div>
-      </body>
-    </html>
-  `);
+// Serve frontend files from /public
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+// -------------------------------------------------------
+// In-memory store
+// For a real app you'd swap this with a database.
+// -------------------------------------------------------
+
+// Map of publicKey (base64 SPKI) → WebSocket connection
+const online = new Map();
+
+// Message history: array of { id, senderKey, recipientKey, encrypted, timestamp }
+// Kept in memory so users can load history on reconnect (within the same server run).
+const history = [];
+let nextId = 1;
+
+// -------------------------------------------------------
+// WebSocket protocol
+//
+// Client → Server message types:
+//   identify   { publicKey }             — register this connection
+//   send       { recipientKey, encrypted } — relay an encrypted message
+//
+// Server → Client message types:
+//   history    { messages: [...] }        — past messages for this user
+//   message    { id, senderKey, recipientKey, encrypted, timestamp }
+//   error      { message }
+// -------------------------------------------------------
+
+wss.on('connection', (ws) => {
+  let myKey = null;
+
+  ws.on('message', (raw) => {
+    let msg;
+    try { msg = JSON.parse(raw); } catch { return; }
+
+    // ── identify ──────────────────────────────────────
+    // Client sends its public key so the server can route
+    // incoming messages to it. The server NEVER receives
+    // a private key.
+    if (msg.type === 'identify') {
+      myKey = msg.publicKey;
+      online.set(myKey, ws);
+
+      // Replay all messages where this user is sender or recipient.
+      // Messages are still encrypted — the server cannot read them.
+      const past = history.filter(
+        m => m.senderKey === myKey || m.recipientKey === myKey
+      );
+      ws.send(JSON.stringify({ type: 'history', messages: past }));
+    }
+
+    // ── send ──────────────────────────────────────────
+    // The client has already encrypted the message in the browser.
+    // The server stores and forwards the ciphertext as-is.
+    if (msg.type === 'send' && myKey) {
+      const record = {
+        id:           nextId++,
+        senderKey:    myKey,
+        recipientKey: msg.recipientKey,
+        encrypted:    msg.encrypted,   // opaque blob — server cannot read this
+        timestamp:    new Date().toISOString(),
+      };
+      history.push(record);
+
+      // Deliver live if the recipient is currently connected
+      const recipientWs = online.get(msg.recipientKey);
+      if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
+        recipientWs.send(JSON.stringify({ type: 'message', ...record }));
+      }
+    }
+  });
+
+  ws.on('close', () => {
+    if (myKey) online.delete(myKey);
+  });
 });
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
