@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Chat E2EE — Setup</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,18 +11,20 @@
       font-family: system-ui, sans-serif;
       background: #0f172a;
       color: #e2e8f0;
-      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1.5rem;
+      padding: 1rem;
+      padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     }
 
     .card {
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 12px;
-      padding: 2rem;
+      padding: 1.5rem;
       width: 100%;
       max-width: 540px;
     }
@@ -87,10 +89,16 @@
       color: #e2e8f0;
       padding: 0.6rem 0.75rem;
       font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
+      font-size: 1rem; /* 16px — prevents iOS auto-zoom on focus */
       resize: vertical;
     }
     textarea:focus, input:focus { outline: none; border-color: #38bdf8; }
+
+    @media (max-width: 480px) {
+      .btn-row { flex-direction: column; }
+      .btn-row button { width: 100%; }
+      .tabs { gap: 0.25rem; }
+    }
 
     .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
@@ -98,11 +106,12 @@
       background: #334155;
       border: none;
       color: #e2e8f0;
-      padding: 0.5rem 1rem;
+      padding: 0.55rem 1rem;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       white-space: nowrap;
+      min-height: 42px;
     }
     button:hover { background: #475569; }
     button.primary { background: #38bdf8; color: #0f172a; font-weight: 600; }

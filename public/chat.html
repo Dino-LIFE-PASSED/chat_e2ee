@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Chat E2EE</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,15 +11,16 @@
       font-family: system-ui, sans-serif;
       background: #0f172a;
       color: #e2e8f0;
-      height: 100vh;
+      /* dvh shrinks when the virtual keyboard opens on mobile */
+      height: 100dvh;
       display: flex;
       overflow: hidden;
     }
 
     /* ── Sidebar ─────────────────────────────────── */
     aside {
-      width: 260px;
-      min-width: 260px;
+      width: 280px;
+      min-width: 280px;
       background: #1e293b;
       border-right: 1px solid #334155;
       display: flex;
@@ -63,24 +64,27 @@
     }
     .contacts-header-actions { display: flex; gap: 0.4rem; align-items: center; }
 
-    /* Notification bell button */
     .notif-btn {
       position: relative;
       background: none;
       border: none;
       color: #64748b;
       cursor: pointer;
-      padding: 0.25rem 0.4rem;
+      padding: 0.3rem 0.5rem;
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.95rem;
       line-height: 1;
+      min-width: 36px;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .notif-btn:hover { background: #334155; color: #e2e8f0; }
     .notif-btn.has-requests { color: #fbbf24; }
     .notif-count {
       position: absolute;
-      top: -4px;
-      right: -4px;
+      top: -2px; right: -2px;
       background: #ef4444;
       color: white;
       border-radius: 999px;
@@ -94,11 +98,9 @@
       padding: 0 2px;
     }
 
-    /* Friend request notification panel */
     #notif-panel {
       background: #0f172a;
       border-bottom: 1px solid #334155;
-      overflow: hidden;
     }
     .notif-panel-header {
       display: flex;
@@ -114,7 +116,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.55rem 1rem;
+      padding: 0.6rem 1rem;
       border-top: 1px solid #1e293b;
       gap: 0.5rem;
     }
@@ -124,7 +126,7 @@
 
     #contacts-list { list-style: none; flex: 1; overflow-y: auto; }
     .contact-item {
-      padding: 0.65rem 1rem;
+      padding: 0.75rem 1rem;
       cursor: pointer;
       border-left: 3px solid transparent;
     }
@@ -133,7 +135,12 @@
     .contact-name { font-size: 0.9rem; }
     .contact-key  { font-size: 0.7rem; font-family: monospace; color: #64748b; margin-top: 1px; }
 
-    .sidebar-footer { padding: 0.75rem 1rem; border-top: 1px solid #334155; }
+    .sidebar-footer {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #334155;
+      /* push above home indicator on iPhone */
+      padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    }
 
     /* ── Main chat area ──────────────────────────── */
     main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -161,8 +168,23 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      min-height: 52px;
     }
-    #chat-name { font-weight: 600; }
+    /* Back button — only visible on mobile */
+    #btn-back {
+      display: none;
+      background: none;
+      border: none;
+      color: #38bdf8;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 0.25rem 0.25rem 0.25rem 0;
+      min-width: 36px;
+      min-height: 36px;
+      align-items: center;
+      justify-content: center;
+    }
+    #chat-name { font-weight: 600; flex-shrink: 0; }
     #rename-input {
       font-weight: 600;
       font-size: 1rem;
@@ -175,18 +197,22 @@
     }
     #rename-input:focus { outline: none; }
     .e2ee-badge {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       background: #064e3b;
       color: #34d399;
       border: 1px solid #059669;
       padding: 1px 7px;
       border-radius: 999px;
+      white-space: nowrap;
     }
     #chat-key-hint {
       font-size: 0.72rem;
       color: #475569;
       font-family: monospace;
       margin-left: auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     #messages {
@@ -196,82 +222,112 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      /* Momentum scrolling on iOS */
+      -webkit-overflow-scrolling: touch;
     }
 
-    .msg { max-width: 70%; padding: 0.5rem 0.75rem; border-radius: 10px; font-size: 0.9rem; line-height: 1.4; }
+    .msg {
+      max-width: 75%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
     .msg .text { word-break: break-word; }
     .msg .time { font-size: 0.7rem; margin-top: 3px; opacity: 0.55; }
     .msg.mine   { background: #1d4ed8; align-self: flex-end; border-bottom-right-radius: 3px; }
     .msg.theirs { background: #1e293b; border: 1px solid #334155; align-self: flex-start; border-bottom-left-radius: 3px; }
 
     .input-row {
-      padding: 0.75rem 1rem;
+      padding: 0.65rem 1rem;
       border-top: 1px solid #334155;
       background: #1e293b;
       display: flex;
       gap: 0.5rem;
+      align-items: center;
+      /* stay above home indicator */
+      padding-bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
     }
     #msg-input {
       flex: 1;
       background: #0f172a;
       border: 1px solid #334155;
-      border-radius: 8px;
+      border-radius: 22px;
       color: #e2e8f0;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.9rem;
+      padding: 0.55rem 1rem;
+      font-size: 1rem; /* 16px — prevents iOS auto-zoom */
+      line-height: 1.4;
     }
     #msg-input:focus { outline: none; border-color: #38bdf8; }
 
     /* ── Modal ───────────────────────────────────── */
     .modal-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.6);
-      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.65);
+      display: flex;
+      align-items: flex-end; /* bottom sheet on mobile */
+      justify-content: center;
       z-index: 100;
+      padding: env(safe-area-inset-top, 0px) 0 0;
     }
     .modal-overlay.hidden { display: none; }
     .modal {
       background: #1e293b;
       border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 1.5rem;
+      border-radius: 16px 16px 0 0;
+      padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
       width: 100%;
-      max-width: 460px;
+      max-width: 520px;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+      /* allow scrolling inside modal if content is tall */
+      max-height: 85dvh;
+      overflow-y: auto;
+    }
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: #475569;
+      border-radius: 999px;
+      margin: 0 auto 0.5rem;
     }
     .modal h3 { color: #f1f5f9; font-size: 1rem; }
 
-    /* ── Shared ──────────────────────────────────── */
+    /* ── Shared buttons / inputs ─────────────────── */
     button {
       background: #334155;
       border: none;
       color: #e2e8f0;
-      padding: 0.5rem 1rem;
+      padding: 0.55rem 1rem;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       white-space: nowrap;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     button:hover { background: #475569; }
+    button:active { opacity: 0.8; }
     button.primary { background: #38bdf8; color: #0f172a; font-weight: 600; }
     button.primary:hover { background: #7dd3fc; }
-    button.icon-btn { background: none; padding: 0.25rem 0.4rem; color: #64748b; border-radius: 6px; }
+    button.icon-btn { background: none; padding: 0.3rem 0.4rem; color: #64748b; border-radius: 6px; min-height: 36px; }
     button.icon-btn:hover { background: #334155; color: #e2e8f0; }
     button.danger { background: #7f1d1d; color: #fca5a5; }
     button.danger:hover { background: #991b1b; }
 
-    label { font-size: 0.85rem; color: #94a3b8; }
+    label { font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 0.25rem; }
     textarea, input[type="text"] {
       width: 100%;
       background: #0f172a;
       border: 1px solid #334155;
       border-radius: 8px;
       color: #e2e8f0;
-      padding: 0.5rem 0.75rem;
+      padding: 0.55rem 0.75rem;
       font-family: monospace;
-      font-size: 0.8rem;
+      font-size: 1rem; /* 16px — prevents iOS auto-zoom */
       resize: vertical;
     }
     textarea:focus, input[type="text"]:focus { outline: none; border-color: #38bdf8; }
@@ -284,6 +340,41 @@
       background: #0f172a;
       display: flex; align-items: center; justify-content: center;
       font-size: 0.9rem; color: #64748b;
+    }
+
+    /* ── Mobile layout ───────────────────────────── */
+    @media (max-width: 640px) {
+      /* On mobile, sidebar and chat each take the full screen */
+      aside {
+        width: 100%;
+        min-width: unset;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        /* push content below status bar on iPhone */
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+
+      /* When a chat is open, hide the sidebar */
+      body.chat-open aside { display: none; }
+
+      /* When no chat is open, hide the main area */
+      body:not(.chat-open) main { display: none; }
+
+      main {
+        position: fixed;
+        inset: 0;
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+
+      /* Show the back button */
+      #btn-back { display: inline-flex; }
+
+      /* Wider message bubbles on small screens */
+      .msg { max-width: 85%; }
+
+      /* Full-width modal (bottom sheet) is already set above */
+      .modal-overlay { align-items: flex-end; }
     }
   </style>
 </head>
@@ -304,7 +395,6 @@
   <div class="contacts-header">
     <span>Contacts</span>
     <div class="contacts-header-actions">
-      <!-- Bell shows only when there are pending friend requests -->
       <button class="notif-btn hidden" id="btn-notif" onclick="toggleNotifPanel()" title="Friend requests">
         🔔
         <span class="notif-count" id="notif-count">0</span>
@@ -313,7 +403,6 @@
     </div>
   </div>
 
-  <!-- Friend request notification panel -->
   <div id="notif-panel" class="hidden">
     <div class="notif-panel-header">
       <span>Friend Requests</span>
@@ -334,15 +423,16 @@
   <div id="empty-state">
     <div class="icon">💬</div>
     <p>Select a contact or add one to start chatting.</p>
-    <p style="font-size:0.8rem;margin-top:0.25rem;color:#334155">All messages are encrypted before leaving your browser.</p>
+    <p style="font-size:0.8rem;margin-top:0.25rem;color:#334155">Messages are encrypted before leaving your browser.</p>
   </div>
 
   <div id="chat-pane" class="hidden">
     <div id="chat-header">
-      <!-- Normal state: name + rename button -->
+      <!-- Back button: mobile only -->
+      <button id="btn-back" onclick="backToContacts()" aria-label="Back">‹</button>
+
       <span id="chat-name"></span>
-      <button class="icon-btn" id="btn-rename" onclick="startRename()" title="Rename contact">✏️</button>
-      <!-- Editing state: inline input -->
+      <button class="icon-btn" id="btn-rename" onclick="startRename()" title="Rename">✏️</button>
       <input id="rename-input" type="text" class="hidden"
              onblur="finishRename()"
              onkeydown="onRenameKey(event)" />
@@ -350,10 +440,12 @@
       <span class="e2ee-badge">🔒 E2EE</span>
       <span id="chat-key-hint"></span>
     </div>
+
     <div id="messages"></div>
+
     <div class="input-row">
-      <input id="msg-input" type="text" placeholder="Type a message…" onkeydown="onEnter(event)" />
-      <button class="primary" onclick="sendMessage()">Send</button>
+      <input id="msg-input" type="text" placeholder="Message…" onkeydown="onEnter(event)" />
+      <button class="primary" onclick="sendMessage()" style="border-radius:22px;padding:0.55rem 1.1rem;">Send</button>
     </div>
   </div>
 </main>
@@ -361,11 +453,16 @@
 <!-- ── Add Contact Modal ─────────────────────────── -->
 <div class="modal-overlay hidden" id="modal-overlay" onclick="maybeCloseModal(event)">
   <div class="modal">
+    <div class="modal-handle"></div>
     <h3>Add Contact</h3>
-    <label>Their Public Key</label>
-    <textarea id="contact-key-input" rows="4" placeholder="Paste their public key (base64)…"></textarea>
-    <label>Nickname <span style="color:#475569">(optional)</span></label>
-    <input type="text" id="contact-name-input" placeholder="e.g. Alice" />
+    <div>
+      <label>Their Public Key</label>
+      <textarea id="contact-key-input" rows="3" placeholder="Paste their public key (base64)…"></textarea>
+    </div>
+    <div>
+      <label>Nickname <span style="color:#475569">(optional)</span></label>
+      <input type="text" id="contact-name-input" placeholder="e.g. Alice" />
+    </div>
     <p id="modal-error" class="error hidden"></p>
     <div style="display:flex;gap:0.5rem;justify-content:flex-end">
       <button onclick="document.getElementById('modal-overlay').classList.add('hidden')">Cancel</button>
@@ -383,22 +480,17 @@
 
   if (!myPrivateHex || !myPublicKey) { location.href = '/'; }
 
-  // FIX: scope contacts by public key so switching accounts shows the right list.
-  // Each account gets its own isolated contacts store.
   const CONTACTS_KEY = `contacts_${myPublicKey}`;
 
-  let contacts       = JSON.parse(localStorage.getItem(CONTACTS_KEY) || '{}');
-  let pendingRequests = []; // { id, from, timestamp } — in memory only
-  const msgStore     = {}; // { [contactPublicKeyB64]: [{ id, dir, text, ts }] }
+  let contacts        = JSON.parse(localStorage.getItem(CONTACTS_KEY) || '{}');
+  let pendingRequests = [];
+  const msgStore      = {};
 
   let activeContact    = null;
   let privateCryptoKey = null;
   let ws               = null;
 
-  function saveContacts() {
-    localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
-  }
-
+  function saveContacts() { localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts)); }
   function syncContacts() {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'update_contacts', contacts }));
@@ -429,12 +521,20 @@
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     ws = new WebSocket(`${proto}//${location.host}`);
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 'identify', publicKey: myPublicKey }));
-    };
+    ws.onopen = () => ws.send(JSON.stringify({ type: 'identify', publicKey: myPublicKey }));
 
     ws.onmessage = async ({ data }) => {
       const msg = JSON.parse(data);
+
+      if (msg.type === 'contacts') {
+        if (Object.keys(msg.contacts).length > 0) {
+          contacts = msg.contacts;
+          saveContacts();
+        } else if (Object.keys(contacts).length > 0) {
+          syncContacts();
+        }
+        renderContacts();
+      }
 
       if (msg.type === 'history') {
         for (const m of msg.messages) await processMessage(m);
@@ -446,29 +546,8 @@
         renderMessages();
       }
 
-      // Single live friend request
-      if (msg.type === 'friend_request') {
-        addPendingRequest(msg.request);
-      }
-
-      // Contacts synced from server — authoritative across devices
-      if (msg.type === 'contacts') {
-        if (Object.keys(msg.contacts).length > 0) {
-          // Server has contacts — use them as source of truth
-          contacts = msg.contacts;
-          saveContacts();
-        } else if (Object.keys(contacts).length > 0) {
-          // Server has nothing but we have local contacts (e.g. first login after this update)
-          // Push local up so they're available on other devices going forward
-          syncContacts();
-        }
-        renderContacts();
-      }
-
-      // Batch of queued requests delivered on login
-      if (msg.type === 'friend_requests') {
-        for (const req of msg.requests) addPendingRequest(req);
-      }
+      if (msg.type === 'friend_request')  addPendingRequest(msg.request);
+      if (msg.type === 'friend_requests') msg.requests.forEach(addPendingRequest);
     };
 
     ws.onclose = () => setTimeout(connectWS, 2000);
@@ -481,12 +560,10 @@
     const contactKey = isMine ? m.recipientKey : m.senderKey;
 
     if (!msgStore[contactKey]) msgStore[contactKey] = [];
-    if (msgStore[contactKey].find(x => x.id === m.id)) return; // duplicate
+    if (msgStore[contactKey].find(x => x.id === m.id)) return;
 
     let text;
     try {
-      // ECDH shared secret is symmetric, so Alice can decrypt both her own
-      // sent messages (ECDH(Alice_priv, Bob_pub)) and received ones — same result.
       text = await E2EE.decryptMessage(m.encrypted, privateCryptoKey, contactKey);
     } catch {
       text = '⚠️ Could not decrypt.';
@@ -518,9 +595,18 @@
     document.getElementById('chat-pane').classList.remove('hidden');
     document.getElementById('chat-name').textContent     = contacts[key]?.name || E2EE.shortId(key);
     document.getElementById('chat-key-hint').textContent = E2EE.shortId(key);
+    document.body.classList.add('chat-open'); // mobile: switch to chat pane
     renderContacts();
     renderMessages();
     document.getElementById('msg-input').focus();
+  }
+
+  function backToContacts() {
+    document.body.classList.remove('chat-open'); // mobile: switch back to sidebar
+    activeContact = null;
+    document.getElementById('chat-pane').classList.add('hidden');
+    document.getElementById('empty-state').classList.remove('hidden');
+    renderContacts();
   }
 
   // ── Rename contact ────────────────────────────────────────────────────────
@@ -529,7 +615,6 @@
     const nameEl  = document.getElementById('chat-name');
     const inputEl = document.getElementById('rename-input');
     const btnEl   = document.getElementById('btn-rename');
-
     inputEl.value = contacts[activeContact]?.name || '';
     nameEl.classList.add('hidden');
     btnEl.classList.add('hidden');
@@ -543,7 +628,6 @@
     const inputEl = document.getElementById('rename-input');
     const btnEl   = document.getElementById('btn-rename');
     const newName = inputEl.value.trim();
-
     if (newName && activeContact) {
       contacts[activeContact].name = newName;
       saveContacts();
@@ -551,14 +635,13 @@
       nameEl.textContent = newName;
       renderContacts();
     }
-
     nameEl.classList.remove('hidden');
     btnEl.classList.remove('hidden');
     inputEl.classList.add('hidden');
   }
 
   function onRenameKey(e) {
-    if (e.key === 'Enter')  { e.target.blur(); } // triggers finishRename via onblur
+    if (e.key === 'Enter')  e.target.blur();
     if (e.key === 'Escape') { e.target.value = ''; e.target.blur(); }
   }
 
@@ -568,14 +651,12 @@
     if (!activeContact) return;
     const msgs      = (msgStore[activeContact] || []).slice().sort((a, b) => a.ts < b.ts ? -1 : 1);
     const container = document.getElementById('messages');
-
     container.innerHTML = msgs.map(m => `
       <div class="msg ${m.dir === 'out' ? 'mine' : 'theirs'}">
         <div class="text">${esc(m.text)}</div>
         <div class="time">${fmtTime(m.ts)}</div>
       </div>
     `).join('');
-
     container.scrollTop = container.scrollHeight;
   }
 
@@ -598,7 +679,6 @@
 
     ws.send(JSON.stringify({ type: 'send', recipientKey: activeContact, encrypted }));
 
-    // Optimistic bubble
     if (!msgStore[activeContact]) msgStore[activeContact] = [];
     msgStore[activeContact].push({ id: `local-${Date.now()}`, dir: 'out', text, ts });
     renderMessages();
@@ -611,19 +691,10 @@
   // ── Friend requests ───────────────────────────────────────────────────────
 
   function addPendingRequest(req) {
-    // If we already have this person as a contact, silently ignore —
-    // this happens when they accept our request and the mutual friend_request
-    // bounces back to us.
     if (contacts[req.from]) return;
-
-    if (!pendingRequests.find(r => r.id === req.id)) {
-      pendingRequests.push(req);
-    }
+    if (!pendingRequests.find(r => r.id === req.id)) pendingRequests.push(req);
     updateNotifBadge();
-    // Re-render panel if it's open
-    if (!document.getElementById('notif-panel').classList.contains('hidden')) {
-      renderNotifPanel();
-    }
+    if (!document.getElementById('notif-panel').classList.contains('hidden')) renderNotifPanel();
   }
 
   function updateNotifBadge() {
@@ -637,12 +708,8 @@
   function toggleNotifPanel() {
     const panel = document.getElementById('notif-panel');
     const isHidden = panel.classList.contains('hidden');
-    if (isHidden) {
-      renderNotifPanel();
-      panel.classList.remove('hidden');
-    } else {
-      panel.classList.add('hidden');
-    }
+    if (isHidden) { renderNotifPanel(); panel.classList.remove('hidden'); }
+    else          { panel.classList.add('hidden'); }
   }
 
   function renderNotifPanel() {
@@ -661,12 +728,9 @@
   function acceptRequest(btn) {
     const id      = btn.dataset.id;
     const fromKey = btn.dataset.from;
-
     pendingRequests = pendingRequests.filter(r => String(r.id) !== id);
     updateNotifBadge();
     renderNotifPanel();
-
-    // Pre-fill the modal so they can add the sender back in one click
     document.getElementById('contact-key-input').value  = fromKey;
     document.getElementById('contact-name-input').value = '';
     document.getElementById('notif-panel').classList.add('hidden');
@@ -678,7 +742,7 @@
   function openModal() {
     document.getElementById('modal-error').classList.add('hidden');
     document.getElementById('modal-overlay').classList.remove('hidden');
-    setTimeout(() => document.getElementById('contact-key-input').focus(), 50);
+    setTimeout(() => document.getElementById('contact-key-input').focus(), 100);
   }
 
   function maybeCloseModal(e) {
@@ -693,16 +757,8 @@
     const errorEl = document.getElementById('modal-error');
     errorEl.classList.add('hidden');
 
-    if (!key) {
-      errorEl.textContent = 'Paste a public key.';
-      errorEl.classList.remove('hidden');
-      return;
-    }
-    if (key === myPublicKey) {
-      errorEl.textContent = "That's your own public key.";
-      errorEl.classList.remove('hidden');
-      return;
-    }
+    if (!key) { errorEl.textContent = 'Paste a public key.'; errorEl.classList.remove('hidden'); return; }
+    if (key === myPublicKey) { errorEl.textContent = "That's your own public key."; errorEl.classList.remove('hidden'); return; }
 
     try {
       await E2EE.validatePublicKey(key);
@@ -716,7 +772,6 @@
     saveContacts();
     syncContacts();
 
-    // Notify the other user so they can add you back without copy-pasting your key
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'friend_request', to: key }));
     }
@@ -738,8 +793,6 @@
   function logout() {
     localStorage.removeItem('privateKeyHex');
     localStorage.removeItem('publicKey');
-    // Note: contacts (scoped per key) and message history are intentionally kept
-    // so they're still there if the user logs back in with the same key.
     location.href = '/';
   }
 
