@@ -25,19 +25,25 @@ const online = new Map();
 // Message history: array of { id, senderKey, recipientKey, encrypted, timestamp }
 // Kept in memory so users can load history on reconnect (within the same server run).
 const history = [];
+
+// Pending friend requests for offline users: { id, from, to, timestamp }
+const pendingRequests = [];
+
 let nextId = 1;
 
 // -------------------------------------------------------
 // WebSocket protocol
 //
 // Client → Server message types:
-//   identify   { publicKey }             — register this connection
-//   send       { recipientKey, encrypted } — relay an encrypted message
+//   identify        { publicKey }               — register this connection
+//   send            { recipientKey, encrypted } — relay an encrypted message
+//   friend_request  { to }                      — notify another user they were added
 //
 // Server → Client message types:
-//   history    { messages: [...] }        — past messages for this user
-//   message    { id, senderKey, recipientKey, encrypted, timestamp }
-//   error      { message }
+//   history         { messages: [...] }          — past messages for this user
+//   message         { id, senderKey, ... }       — incoming live message
+//   friend_request  { request: { id, from, timestamp } } — live notification
+//   friend_requests { requests: [...] }          — queued notifications on login
 // -------------------------------------------------------
 
 wss.on('connection', (ws) => {
@@ -61,6 +67,28 @@ wss.on('connection', (ws) => {
         m => m.senderKey === myKey || m.recipientKey === myKey
       );
       ws.send(JSON.stringify({ type: 'history', messages: past }));
+
+      // Flush any queued friend requests for this user
+      const queued = pendingRequests.filter(r => r.to === myKey);
+      if (queued.length > 0) {
+        ws.send(JSON.stringify({ type: 'friend_requests', requests: queued }));
+        queued.forEach(r => pendingRequests.splice(pendingRequests.indexOf(r), 1));
+      }
+    }
+
+    // ── friend_request ────────────────────────────────
+    // User A just added User B to their contacts.
+    // Notify B so they can add A back without manually exchanging keys.
+    if (msg.type === 'friend_request' && myKey) {
+      const req = { id: nextId++, from: myKey, to: msg.to, timestamp: new Date().toISOString() };
+      const recipientWs = online.get(msg.to);
+      if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
+        // B is online — deliver immediately
+        recipientWs.send(JSON.stringify({ type: 'friend_request', request: req }));
+      } else {
+        // B is offline — queue for next login
+        pendingRequests.push(req);
+      }
     }
 
     // ── send ──────────────────────────────────────────

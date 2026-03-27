@@ -52,7 +52,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.75rem 1rem;
+      padding: 0.6rem 1rem;
       border-bottom: 1px solid #334155;
     }
     .contacts-header span {
@@ -61,10 +61,70 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
+    .contacts-header-actions { display: flex; gap: 0.4rem; align-items: center; }
+
+    /* Notification bell button */
+    .notif-btn {
+      position: relative;
+      background: none;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0.25rem 0.4rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+    .notif-btn:hover { background: #334155; color: #e2e8f0; }
+    .notif-btn.has-requests { color: #fbbf24; }
+    .notif-count {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #ef4444;
+      color: white;
+      border-radius: 999px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      min-width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 2px;
+    }
+
+    /* Friend request notification panel */
+    #notif-panel {
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      overflow: hidden;
+    }
+    .notif-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      font-size: 0.72rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .notif-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.55rem 1rem;
+      border-top: 1px solid #1e293b;
+      gap: 0.5rem;
+    }
+    .notif-item-info { flex: 1; min-width: 0; }
+    .notif-from { font-size: 0.72rem; font-family: monospace; color: #94a3b8; }
+    .notif-time { font-size: 0.68rem; color: #475569; margin-top: 1px; }
 
     #contacts-list { list-style: none; flex: 1; overflow-y: auto; }
     .contact-item {
-      padding: 0.7rem 1rem;
+      padding: 0.65rem 1rem;
       cursor: pointer;
       border-left: 3px solid transparent;
     }
@@ -95,14 +155,25 @@
     #chat-pane.hidden { display: none; }
 
     #chat-header {
-      padding: 0.75rem 1.25rem;
+      padding: 0.65rem 1rem;
       border-bottom: 1px solid #334155;
       background: #1e293b;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
-    #chat-header .name { font-weight: 600; }
+    #chat-name { font-weight: 600; }
+    #rename-input {
+      font-weight: 600;
+      font-size: 1rem;
+      background: #0f172a;
+      border: 1px solid #38bdf8;
+      border-radius: 6px;
+      color: #f1f5f9;
+      padding: 0.15rem 0.4rem;
+      width: 140px;
+    }
+    #rename-input:focus { outline: none; }
     .e2ee-badge {
       font-size: 0.7rem;
       background: #064e3b;
@@ -111,7 +182,7 @@
       padding: 1px 7px;
       border-radius: 999px;
     }
-    #chat-header .key-hint {
+    #chat-key-hint {
       font-size: 0.72rem;
       color: #475569;
       font-family: monospace;
@@ -130,7 +201,6 @@
     .msg { max-width: 70%; padding: 0.5rem 0.75rem; border-radius: 10px; font-size: 0.9rem; line-height: 1.4; }
     .msg .text { word-break: break-word; }
     .msg .time { font-size: 0.7rem; margin-top: 3px; opacity: 0.55; }
-
     .msg.mine   { background: #1d4ed8; align-self: flex-end; border-bottom-right-radius: 3px; }
     .msg.theirs { background: #1e293b; border: 1px solid #334155; align-self: flex-start; border-bottom-left-radius: 3px; }
 
@@ -187,6 +257,8 @@
     button:hover { background: #475569; }
     button.primary { background: #38bdf8; color: #0f172a; font-weight: 600; }
     button.primary:hover { background: #7dd3fc; }
+    button.icon-btn { background: none; padding: 0.25rem 0.4rem; color: #64748b; border-radius: 6px; }
+    button.icon-btn:hover { background: #334155; color: #e2e8f0; }
     button.danger { background: #7f1d1d; color: #fca5a5; }
     button.danger:hover { background: #991b1b; }
 
@@ -202,7 +274,7 @@
       font-size: 0.8rem;
       resize: vertical;
     }
-    textarea:focus, input:focus { outline: none; border-color: #38bdf8; }
+    textarea:focus, input[type="text"]:focus { outline: none; border-color: #38bdf8; }
 
     .error { color: #f87171; font-size: 0.85rem; }
     .hidden { display: none !important; }
@@ -217,7 +289,6 @@
 </head>
 <body>
 
-<!-- Shown while we compute the public key from the stored hex private key -->
 <div id="loading-screen">Loading keys…</div>
 
 <!-- ── Sidebar ───────────────────────────────────── -->
@@ -232,7 +303,23 @@
 
   <div class="contacts-header">
     <span>Contacts</span>
-    <button onclick="openModal()">+ Add</button>
+    <div class="contacts-header-actions">
+      <!-- Bell shows only when there are pending friend requests -->
+      <button class="notif-btn hidden" id="btn-notif" onclick="toggleNotifPanel()" title="Friend requests">
+        🔔
+        <span class="notif-count" id="notif-count">0</span>
+      </button>
+      <button onclick="openModal()">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Friend request notification panel -->
+  <div id="notif-panel" class="hidden">
+    <div class="notif-panel-header">
+      <span>Friend Requests</span>
+      <button class="icon-btn" onclick="document.getElementById('notif-panel').classList.add('hidden')">✕</button>
+    </div>
+    <div id="notif-list"></div>
   </div>
 
   <ul id="contacts-list"></ul>
@@ -247,14 +334,21 @@
   <div id="empty-state">
     <div class="icon">💬</div>
     <p>Select a contact or add one to start chatting.</p>
-    <p style="font-size:0.8rem;margin-top:0.25rem">All messages are encrypted before they leave your browser.</p>
+    <p style="font-size:0.8rem;margin-top:0.25rem;color:#334155">All messages are encrypted before leaving your browser.</p>
   </div>
 
   <div id="chat-pane" class="hidden">
     <div id="chat-header">
-      <span class="name" id="chat-name"></span>
+      <!-- Normal state: name + rename button -->
+      <span id="chat-name"></span>
+      <button class="icon-btn" id="btn-rename" onclick="startRename()" title="Rename contact">✏️</button>
+      <!-- Editing state: inline input -->
+      <input id="rename-input" type="text" class="hidden"
+             onblur="finishRename()"
+             onkeydown="onRenameKey(event)" />
+
       <span class="e2ee-badge">🔒 E2EE</span>
-      <span class="key-hint" id="chat-key-hint"></span>
+      <span id="chat-key-hint"></span>
     </div>
     <div id="messages"></div>
     <div class="input-row">
@@ -283,41 +377,35 @@
 <script src="crypto.js"></script>
 <script>
   // ── Bootstrap ─────────────────────────────────────────────────────────────
-  //
-  // We store only the hex private key in localStorage.
-  // On every page load, we re-derive the CryptoKey from it.
-  // This keeps the sensitive CryptoKey object out of storage
-  // (it lives only in memory for this session).
 
   const myPrivateHex = localStorage.getItem('privateKeyHex');
   const myPublicKey  = localStorage.getItem('publicKey');
 
-  if (!myPrivateHex || !myPublicKey) {
-    location.href = '/';
+  if (!myPrivateHex || !myPublicKey) { location.href = '/'; }
+
+  // FIX: scope contacts by public key so switching accounts shows the right list.
+  // Each account gets its own isolated contacts store.
+  const CONTACTS_KEY = `contacts_${myPublicKey}`;
+
+  let contacts       = JSON.parse(localStorage.getItem(CONTACTS_KEY) || '{}');
+  let pendingRequests = []; // { id, from, timestamp } — in memory only
+  const msgStore     = {}; // { [contactPublicKeyB64]: [{ id, dir, text, ts }] }
+
+  let activeContact    = null;
+  let privateCryptoKey = null;
+  let ws               = null;
+
+  function saveContacts() {
+    localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
   }
-
-  let privateCryptoKey = null; // set during init below
-
-  // contacts: { [publicKeyB64]: { name } }
-  let contacts = JSON.parse(localStorage.getItem('contacts') || '{}');
-
-  // Message store: { [contactPublicKeyB64]: [{ id, dir, text, ts }] }
-  // dir = 'in' | 'out'
-  const msgStore = {};
-
-  let activeContact = null;
-  let ws = null;
 
   // ── Async init ────────────────────────────────────────────────────────────
 
   (async () => {
     try {
-      // Re-derive CryptoKey from the stored hex private key.
-      // This also re-computes the public key via P-256 EC math.
       const result = await E2EE.importFromHex(myPrivateHex);
       privateCryptoKey = result.privateCryptoKey;
 
-      // UI
       document.getElementById('my-key-display').textContent = E2EE.shortId(myPublicKey);
       document.getElementById('loading-screen').style.display = 'none';
 
@@ -325,7 +413,6 @@
       connectWS();
     } catch (e) {
       console.error('Key import failed:', e);
-      // Key is corrupt or invalid — force logout
       logout();
     }
   })();
@@ -337,35 +424,39 @@
     ws = new WebSocket(`${proto}//${location.host}`);
 
     ws.onopen = () => {
-      // Send only our public key — never the private key
       ws.send(JSON.stringify({ type: 'identify', publicKey: myPublicKey }));
     };
 
     ws.onmessage = async ({ data }) => {
       const msg = JSON.parse(data);
+
       if (msg.type === 'history') {
-        for (const m of msg.messages) await handleIncoming(m);
+        for (const m of msg.messages) await processMessage(m);
         renderMessages();
       }
+
       if (msg.type === 'message') {
-        await handleIncoming(msg);
+        await processMessage(msg);
         renderMessages();
+      }
+
+      // Single live friend request
+      if (msg.type === 'friend_request') {
+        addPendingRequest(msg.request);
+      }
+
+      // Batch of queued requests delivered on login
+      if (msg.type === 'friend_requests') {
+        for (const req of msg.requests) addPendingRequest(req);
       }
     };
 
     ws.onclose = () => setTimeout(connectWS, 2000);
   }
 
-  /**
-   * Handle a message record (either from history or live).
-   *
-   * With ECDH, the shared secret between Alice and Bob is symmetric:
-   *   ECDH(Alice_priv, Bob_pub) == ECDH(Bob_priv, Alice_pub)
-   *
-   * So Alice can decrypt BOTH messages she sent to Bob (using her private key
-   * + Bob's public key) AND messages she received from Bob. No special-casing needed.
-   */
-  async function handleIncoming(m) {
+  // ── Message processing ────────────────────────────────────────────────────
+
+  async function processMessage(m) {
     const isMine     = m.senderKey === myPublicKey;
     const contactKey = isMine ? m.recipientKey : m.senderKey;
 
@@ -374,18 +465,14 @@
 
     let text;
     try {
-      // contactKey is the other party's public key — used for ECDH on both sides
+      // ECDH shared secret is symmetric, so Alice can decrypt both her own
+      // sent messages (ECDH(Alice_priv, Bob_pub)) and received ones — same result.
       text = await E2EE.decryptMessage(m.encrypted, privateCryptoKey, contactKey);
     } catch {
       text = '⚠️ Could not decrypt.';
     }
 
-    msgStore[contactKey].push({
-      id:  m.id,
-      dir: isMine ? 'out' : 'in',
-      text,
-      ts:  m.timestamp,
-    });
+    msgStore[contactKey].push({ id: m.id, dir: isMine ? 'out' : 'in', text, ts: m.timestamp });
   }
 
   // ── Contacts ──────────────────────────────────────────────────────────────
@@ -409,11 +496,49 @@
     activeContact = key;
     document.getElementById('empty-state').classList.add('hidden');
     document.getElementById('chat-pane').classList.remove('hidden');
-    document.getElementById('chat-name').textContent    = contacts[key]?.name || E2EE.shortId(key);
+    document.getElementById('chat-name').textContent     = contacts[key]?.name || E2EE.shortId(key);
     document.getElementById('chat-key-hint').textContent = E2EE.shortId(key);
     renderContacts();
     renderMessages();
     document.getElementById('msg-input').focus();
+  }
+
+  // ── Rename contact ────────────────────────────────────────────────────────
+
+  function startRename() {
+    const nameEl  = document.getElementById('chat-name');
+    const inputEl = document.getElementById('rename-input');
+    const btnEl   = document.getElementById('btn-rename');
+
+    inputEl.value = contacts[activeContact]?.name || '';
+    nameEl.classList.add('hidden');
+    btnEl.classList.add('hidden');
+    inputEl.classList.remove('hidden');
+    inputEl.focus();
+    inputEl.select();
+  }
+
+  function finishRename() {
+    const nameEl  = document.getElementById('chat-name');
+    const inputEl = document.getElementById('rename-input');
+    const btnEl   = document.getElementById('btn-rename');
+    const newName = inputEl.value.trim();
+
+    if (newName && activeContact) {
+      contacts[activeContact].name = newName;
+      saveContacts();
+      nameEl.textContent = newName;
+      renderContacts();
+    }
+
+    nameEl.classList.remove('hidden');
+    btnEl.classList.remove('hidden');
+    inputEl.classList.add('hidden');
+  }
+
+  function onRenameKey(e) {
+    if (e.key === 'Enter')  { e.target.blur(); } // triggers finishRename via onblur
+    if (e.key === 'Escape') { e.target.value = ''; e.target.blur(); }
   }
 
   // ── Messages ──────────────────────────────────────────────────────────────
@@ -442,8 +567,6 @@
     input.value = '';
 
     const ts = new Date().toISOString();
-
-    // Encrypt before sending — server only ever sees the ciphertext
     let encrypted;
     try {
       encrypted = await E2EE.encryptMessage(text, privateCryptoKey, activeContact);
@@ -454,7 +577,7 @@
 
     ws.send(JSON.stringify({ type: 'send', recipientKey: activeContact, encrypted }));
 
-    // Optimistic bubble — show immediately without waiting for server echo
+    // Optimistic bubble
     if (!msgStore[activeContact]) msgStore[activeContact] = [];
     msgStore[activeContact].push({ id: `local-${Date.now()}`, dir: 'out', text, ts });
     renderMessages();
@@ -464,11 +587,69 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   }
 
+  // ── Friend requests ───────────────────────────────────────────────────────
+
+  function addPendingRequest(req) {
+    if (!pendingRequests.find(r => r.id === req.id)) {
+      pendingRequests.push(req);
+    }
+    updateNotifBadge();
+    // Re-render panel if it's open
+    if (!document.getElementById('notif-panel').classList.contains('hidden')) {
+      renderNotifPanel();
+    }
+  }
+
+  function updateNotifBadge() {
+    const btn   = document.getElementById('btn-notif');
+    const count = pendingRequests.length;
+    document.getElementById('notif-count').textContent = count;
+    btn.classList.toggle('hidden', count === 0);
+    btn.classList.toggle('has-requests', count > 0);
+  }
+
+  function toggleNotifPanel() {
+    const panel = document.getElementById('notif-panel');
+    const isHidden = panel.classList.contains('hidden');
+    if (isHidden) {
+      renderNotifPanel();
+      panel.classList.remove('hidden');
+    } else {
+      panel.classList.add('hidden');
+    }
+  }
+
+  function renderNotifPanel() {
+    document.getElementById('notif-list').innerHTML = pendingRequests.map(req => `
+      <div class="notif-item">
+        <div class="notif-item-info">
+          <div style="font-size:0.82rem">wants to connect</div>
+          <div class="notif-from">${esc(E2EE.shortId(req.from))}</div>
+          <div class="notif-time">${fmtTime(req.timestamp)}</div>
+        </div>
+        <button data-id="${req.id}" data-from="${esc(req.from)}" onclick="acceptRequest(this)">Add</button>
+      </div>
+    `).join('');
+  }
+
+  function acceptRequest(btn) {
+    const id      = btn.dataset.id;
+    const fromKey = btn.dataset.from;
+
+    pendingRequests = pendingRequests.filter(r => String(r.id) !== id);
+    updateNotifBadge();
+    renderNotifPanel();
+
+    // Pre-fill the modal so they can add the sender back in one click
+    document.getElementById('contact-key-input').value  = fromKey;
+    document.getElementById('contact-name-input').value = '';
+    document.getElementById('notif-panel').classList.add('hidden');
+    openModal();
+  }
+
   // ── Add Contact ───────────────────────────────────────────────────────────
 
   function openModal() {
-    document.getElementById('contact-key-input').value  = '';
-    document.getElementById('contact-name-input').value = '';
     document.getElementById('modal-error').classList.add('hidden');
     document.getElementById('modal-overlay').classList.remove('hidden');
     setTimeout(() => document.getElementById('contact-key-input').focus(), 50);
@@ -506,7 +687,13 @@
     }
 
     contacts[key] = { name: name || E2EE.shortId(key) };
-    localStorage.setItem('contacts', JSON.stringify(contacts));
+    saveContacts();
+
+    // Notify the other user so they can add you back without copy-pasting your key
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'friend_request', to: key }));
+    }
+
     document.getElementById('modal-overlay').classList.add('hidden');
     renderContacts();
     openConversation(key);
@@ -524,6 +711,8 @@
   function logout() {
     localStorage.removeItem('privateKeyHex');
     localStorage.removeItem('publicKey');
+    // Note: contacts (scoped per key) and message history are intentionally kept
+    // so they're still there if the user logs back in with the same key.
     location.href = '/';
   }
 
