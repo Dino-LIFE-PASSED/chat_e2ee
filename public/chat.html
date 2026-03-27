@@ -590,6 +590,11 @@
   // ── Friend requests ───────────────────────────────────────────────────────
 
   function addPendingRequest(req) {
+    // If we already have this person as a contact, silently ignore —
+    // this happens when they accept our request and the mutual friend_request
+    // bounces back to us.
+    if (contacts[req.from]) return;
+
     if (!pendingRequests.find(r => r.id === req.id)) {
       pendingRequests.push(req);
     }
